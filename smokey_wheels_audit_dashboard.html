@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smokey Wheels – IT Audit Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:        #0b0e14;
+  --surface:   #111520;
+  --surface2:  #161b28;
+  --border:    rgba(255,255,255,0.07);
+  --accent:    #f97316;
+  --accent2:   #fb923c;
+  --blue:      #3b82f6;
+  --green:     #22c55e;
+  --yellow:    #f59e0b;
+  --red:       #ef4444;
+  --purple:    #a855f7;
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --muted2:    #475569;
+  --font:      'DM Sans', sans-serif;
+  --mono:      'Space Mono', monospace;
+  --sidebar-w: 240px;
+  --header-h:  64px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;height:100vh;z-index:100;
+  transition:transform .3s ease;
+}
+.sidebar-logo{
+  padding:20px 20px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.logo-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#c2410c);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:700;color:#fff;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(249,115,22,.35);
+}
+.logo-text{line-height:1.2}
+.logo-text .brand{font-size:14px;font-weight:700;letter-spacing:.5px}
+.logo-text .sub{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+
+.sidebar-section{padding:20px 12px 8px;font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:2px;font-weight:600}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;
+  cursor:pointer;transition:all .18s;color:var(--muted);font-size:13px;font-weight:500;
+  margin:2px 4px;
+}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.nav-item.active{background:rgba(249,115,22,.12);color:var(--accent);border:1px solid rgba(249,115,22,.2)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:10px}
+.user-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.user-info .name{font-size:12px;font-weight:600}
+.user-info .role{font-size:10px;color:var(--muted)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* ── HEADER ── */
+.header{
+  height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 28px;gap:16px;flex-shrink:0;
+}
+.header-title{font-size:16px;font-weight:700;flex:1}
+.header-title span{color:var(--accent)}
+.filter-group{display:flex;align-items:center;gap:10px}
+.filter-select{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  font-family:var(--font);font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;
+  outline:none;transition:border .2s;
+}
+.filter-select:hover{border-color:var(--accent)}
+.filter-btn{
+  background:linear-gradient(135deg,var(--accent),#c2410c);color:#fff;
+  border:none;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:var(--font);transition:opacity .2s;letter-spacing:.3px;
+}
+.filter-btn:hover{opacity:.88}
+.header-icon{
+  width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;
+  transition:border .2s;
+}
+.header-icon:hover{border-color:var(--accent)}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:24px 28px}
+.page{display:none}
+.page.active{display:block}
+
+/* ── CARDS ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:18px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;
+  cursor:default;
+}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.4)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi-card.c-orange::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.kpi-card.c-blue::before{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.kpi-card.c-red::before{background:linear-gradient(90deg,var(--red),#f87171)}
+.kpi-card.c-yellow::before{background:linear-gradient(90deg,var(--yellow),#fcd34d)}
+.kpi-card.c-green::before{background:linear-gradient(90deg,var(--green),#4ade80)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kpi-icon{font-size:20px}
+.kpi-trend{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.trend-up{background:rgba(34,197,94,.12);color:var(--green)}
+.trend-dn{background:rgba(239,68,68,.12);color:var(--red)}
+.trend-nt{background:rgba(245,158,11,.12);color:var(--yellow)}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;font-weight:600}
+.kpi-value{font-size:30px;font-weight:700;font-family:var(--mono);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* ── CHARTS GRID ── */
+.charts-row{display:grid;gap:16px;margin-bottom:16px}
+.charts-row.c3{grid-template-columns:2fr 1fr 1fr}
+.charts-row.c2{grid-template-columns:3fr 2fr}
+.charts-row.c2eq{grid-template-columns:1fr 1fr}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.card-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700}
+.badge-orange{background:rgba(249,115,22,.12);color:var(--accent)}
+.badge-green{background:rgba(34,197,94,.12);color:var(--green)}
+.badge-blue{background:rgba(59,130,246,.12);color:var(--blue)}
+.badge-red{background:rgba(239,68,68,.12);color:var(--red)}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:rgba(255,255,255,.03);padding:10px 14px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .14s}
+tbody tr:hover{background:rgba(59,130,246,.04)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:10px 14px;color:#94a3b8;vertical-align:middle}
+.cell-name{color:var(--text);font-weight:500}
+.cell-id{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.cell-amount{font-family:var(--mono);font-weight:700;font-size:13px}
+.status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+.pill-ok{background:rgba(34,197,94,.1);color:var(--green)}
+.pill-flag{background:rgba(239,68,68,.1);color:var(--red)}
+.pill-pend{background:rgba(245,158,11,.1);color:var(--yellow)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* ── ANOMALY LIST ── */
+.anomaly-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.anomaly-item:last-child{border-bottom:none}
+.anomaly-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.anomaly-msg{flex:1;font-size:12px;color:#94a3b8;line-height:1.5}
+.anomaly-val{font-family:var(--mono);font-size:12px;font-weight:700}
+
+/* ── RISK PAGE ── */
+.risk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.risk-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
+.risk-num{font-size:48px;font-weight:700;font-family:var(--mono);line-height:1}
+.risk-label{font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-top:6px;font-weight:600}
+.risk-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.prog-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.prog-label{width:160px;font-size:12px;color:#94a3b8}
+.prog-bar-wrap{flex:1;background:rgba(255,255,255,.06);border-radius:99px;height:8px;overflow:hidden}
+.prog-bar{height:100%;border-radius:99px;transition:width 1.2s ease}
+.prog-pct{width:40px;font-size:12px;font-weight:700;font-family:var(--mono);text-align:right}
+
+/* ── AUDIT FINDINGS ── */
+.finding-card{border-radius:0 12px 12px 0;padding:16px 20px;display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;border-left:4px solid;background:var(--surface2)}
+.finding-icon{font-size:22px}
+.finding-title{font-size:14px;font-weight:700;margin-bottom:5px}
+.finding-msg{font-size:12px;color:#94a3b8;line-height:1.7}
+.finding-meta{font-size:10px;color:var(--muted2);margin-top:6px;font-family:var(--mono)}
+.rec-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:10px;display:flex;gap:14px}
+.rec-num{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);flex-shrink:0;width:32px}
+.rec-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.rec-body{font-size:12px;color:#94a3b8;line-height:1.6}
+
+/* ── SETTINGS ── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;font-weight:500}
+.setting-sub{font-size:11px;color:var(--muted)}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--surface2);border:1px solid var(--border);position:relative;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s}
+.toggle.on::after{transform:translateX(18px)}
+.input-field{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:8px 12px;border-radius:8px;outline:none;width:100%;transition:border .2s}
+.input-field:focus{border-color:var(--accent)}
+
+/* ── HEATMAP ── */
+.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding-top:8px}
+.hm-cell{height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;transition:transform .15s}
+.hm-cell:hover{transform:scale(1.08)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18)}
+
+/* ── SECTION HEADER ── */
+.sec-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.sec-header h2{font-size:18px;font-weight:700}
+.sec-header .sec-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;background:rgba(249,115,22,.12);color:var(--accent)}
+
+/* animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page.active{animation:fadeIn .28s ease}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">SW</div>
+    <div class="logo-text">
+      <div class="brand">Smokey Wheels</div>
+      <div class="sub">IT Audit Suite</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">Main Menu</div>
+  <div class="nav-item active" onclick="nav(this,'dashboard')"><span class="nav-icon">⬛</span>Dashboard</div>
+  <div class="nav-item" onclick="nav(this,'transactions')"><span class="nav-icon">💳</span>Transactions<span class="nav-badge">12</span></div>
+  <div class="nav-item" onclick="nav(this,'risk')"><span class="nav-icon">🛡️</span>Risk Management</div>
+  <div class="nav-item" onclick="nav(this,'reports')"><span class="nav-icon">📋</span>Audit Reports</div>
+
+  <div class="sidebar-section">System</div>
+  <div class="nav-item" onclick="nav(this,'settings')"><span class="nav-icon">⚙️</span>Settings</div>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">AK</div>
+      <div class="user-info">
+        <div class="name">Arun Kumar</div>
+        <div class="role">Lead Auditor</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-title">IT Audit <span>Dashboard</span></div>
+    <div class="filter-group">
+      <select class="filter-select" id="fCat">
+        <option>All Categories</option>
+        <option>Groceries</option><option>Electronics</option><option>Beverages</option>
+        <option>Bakery</option><option>Meat & Poultry</option><option>Dairy</option>
+      </select>
+      <select class="filter-select" id="fPay">
+        <option>All Payments</option>
+        <option>Cash</option><option>Card</option><option>UPI</option><option>Wallet</option>
+      </select>
+      <select class="filter-select" id="fDate">
+        <option>Last 30 Days</option>
+        <option>Last 7 Days</option><option>Last Quarter</option><option>FY 2025-26</option>
+      </select>
+      <button class="filter-btn" onclick="applyFilters()">Apply Filters</button>
+    </div>
+    <div class="header-icon">🔔</div>
+    <div class="header-icon">🔍</div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══ DASHBOARD PAGE ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="sec-header">
+        <h2>Dashboard Overview</h2>
+        <span class="sec-badge">March 2026</span>
+      </div>
+
+      <!-- KPI -->
+      <div class="kpi-grid">
+        <div class="kpi-card c-orange">
+          <div class="kpi-top"><div class="kpi-icon">💰</div><div class="kpi-trend trend-up">↑ 8.4%</div></div>
+          <div class="kpi-label">Total Sales</div>
+          <div class="kpi-value color-accent">₹48.6L</div>
+          <div class="kpi-sub">This month</div>
+        </div>
+        <div class="kpi-card c-blue">
+          <div class="kpi-top"><div class="kpi-icon">🧾</div><div class="kpi-trend trend-up">↑ 5.1%</div></div>
+          <div class="kpi-label">Total Transactions</div>
+          <div class="kpi-value" style="color:var(--blue)">12,847</div>
+          <div class="kpi-sub">Processed</div>
+        </div>
+        <div class="kpi-card c-red">
+          <div class="kpi-top"><div class="kpi-icon">⚠️</div><div class="kpi-trend trend-dn">↑ 3</div></div>
+          <div class="kpi-label">High Risk Count</div>
+          <div class="kpi-value" style="color:var(--red)">47</div>
+          <div class="kpi-sub">Flagged transactions</div>
+        </div>
+        <div class="kpi-card c-yellow">
+          <div class="kpi-top"><div class="kpi-icon">🔁</div><div class="kpi-trend trend-nt">→ 0</div></div>
+          <div class="kpi-label">Duplicate Transactions</div>
+          <div class="kpi-value" style="color:var(--yellow)">18</div>
+          <div class="kpi-sub">Requires review</div>
+        </div>
+        <div class="kpi-card c-green">
+          <div class="kpi-top"><div class="kpi-icon">⏳</div><div class="kpi-trend trend-dn">↓ 6</div></div>
+          <div class="kpi-label">Pending Approvals</div>
+          <div class="kpi-value" style="color:var(--green)">34</div>
+          <div class="kpi-sub">Awaiting sign-off</div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="charts-row c2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Sales by Category</div>
+            <span class="card-badge badge-orange">Bar Chart</span>
+          </div>
+          <canvas id="barChart" height="160"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Payment Distribution</div>
+            <span class="card-badge badge-blue">Doughnut</span>
+          </div>
+          <canvas id="donutChart" height="160"></canvas>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="charts-row c2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Sales Trend — Last 30 Days</div>
+            <span class="card-badge badge-green">Line Chart</span>
+          </div>
+          <canvas id="lineChart" height="130"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Anomaly Detections</div>
+            <span class="card-badge badge-red">Live</span>
+          </div>
+          <div id="anomalyList"></div>
+        </div>
+      </div>
+
+      <!-- Risk Heatmap -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head">
+          <div class="card-title">Risk Heatmap — Week × Category</div>
+          <span class="card-badge badge-orange">7 × 6 Grid</span>
+        </div>
+        <div style="display:flex;gap:20px;align-items:flex-start">
+          <div>
+            <div style="display:grid;grid-template-columns:80px repeat(7,44px);gap:4px;font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px;">
+              <span></span>
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+            <div id="heatmapGrid"></div>
+          </div>
+          <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;padding-top:8px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Risk Level</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:14px;height:14px;border-radius:3px;background:#1a2235"></div>Very Low</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:14px;height:14px;border-radius:3px;background:rgba(34,197,94,.3)"></div>Low</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:14px;height:14px;border-radius:3px;background:rgba(245,158,11,.45)"></div>Medium</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:11px"><div style="width:14px;height:14px;border-radius:3px;background:rgba(239,68,68,.55)"></div>High</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TRANSACTIONS PAGE ══ -->
+    <div class="page" id="page-transactions">
+      <div class="sec-header">
+        <h2>Transactions</h2>
+        <span class="sec-badge">12 Flagged</span>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">All Transactions — March 2026</div>
+          <div style="display:flex;gap:8px">
+            <span class="card-badge" style="background:rgba(34,197,94,.1);color:var(--green)">✓ 12,782 Approved</span>
+            <span class="card-badge badge-red">⚠ 47 Flagged</span>
+            <span class="card-badge" style="background:rgba(245,158,11,.1);color:var(--yellow)">⏳ 18 Pending</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Product</th><th>Category</th><th>Amount</th><th>Payment</th><th>Date</th><th>Status</th><th>Risk</th></tr>
+          </thead>
+          <tbody id="txTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ RISK MANAGEMENT PAGE ══ -->
+    <div class="page" id="page-risk">
+      <div class="sec-header"><h2>Risk Management</h2><span class="sec-badge">47 High Risk</span></div>
+      <div class="risk-grid">
+        <div class="risk-card" style="border-top:3px solid var(--red)">
+          <div class="risk-num" style="color:var(--red)">47</div>
+          <div class="risk-label" style="color:var(--red)">High Risk</div>
+          <div class="risk-sub">Score &gt; 70</div>
+        </div>
+        <div class="risk-card" style="border-top:3px solid var(--yellow)">
+          <div class="risk-num" style="color:var(--yellow)">183</div>
+          <div class="risk-label" style="color:var(--yellow)">Medium Risk</div>
+          <div class="risk-sub">Score 40–70</div>
+        </div>
+        <div class="risk-card" style="border-top:3px solid var(--green)">
+          <div class="risk-num" style="color:var(--green)">12,617</div>
+          <div class="risk-label" style="color:var(--green)">Low Risk</div>
+          <div class="risk-sub">Score &lt; 40</div>
+        </div>
+      </div>
+      <div class="charts-row c2eq">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Risk Score Distribution</div><span class="card-badge badge-orange">Bar Chart</span></div>
+          <canvas id="riskBar" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Risk by Category</div><span class="card-badge badge-red">Radar</span></div>
+          <canvas id="riskRadar" height="200"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Risk Scoring by Product Category</div></div>
+        <div id="riskBars"></div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTS PAGE ══ -->
+    <div class="page" id="page-reports">
+      <div class="sec-header"><h2>Audit Reports</h2><span class="sec-badge">FY 2025-26</span></div>
+      <div style="margin-bottom:20px"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px">Audit Findings</div>
+        <div id="findingsPanel"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Recommendations</div><span class="card-badge badge-blue">6 Actions</span></div>
+        <div id="recsPanel"></div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS PAGE ══ -->
+    <div class="page" id="page-settings">
+      <div class="sec-header"><h2>Settings</h2></div>
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Notifications</div>
+          <div class="setting-row"><div><div class="setting-label">High-Risk Alerts</div><div class="setting-sub">Notify on score &gt; 70</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div><div class="setting-label">Duplicate Alerts</div><div class="setting-sub">Flag duplicate transactions</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div><div class="setting-label">Daily Digest</div><div class="setting-sub">Summary email every morning</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div><div class="setting-label">Compliance Reminders</div><div class="setting-sub">GST, TDS filing reminders</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Audit Configuration</div>
+          <div class="setting-row"><div><div class="setting-label">High-Value Threshold</div><div class="setting-sub">Flag transactions above</div></div><input class="input-field" style="width:100px" value="₹50,000"/></div>
+          <div class="setting-row"><div><div class="setting-label">Risk Score Threshold</div><div class="setting-sub">High risk cutoff</div></div><input class="input-field" style="width:100px" value="70"/></div>
+          <div class="setting-row"><div><div class="setting-label">Audit Period</div><div class="setting-sub">Current fiscal year</div></div><input class="input-field" style="width:130px" value="FY 2025-26"/></div>
+          <div class="setting-row"><div><div class="setting-label">Data Retention</div><div class="setting-sub">Keep logs for</div></div><select class="filter-select"><option>7 Years</option><option>5 Years</option></select></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Organisation</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div><div class="setting-label" style="margin-bottom:5px;font-size:12px">Organisation Name</div><input class="input-field" value="Smokey Wheels Pvt. Ltd."/></div>
+            <div><div class="setting-label" style="margin-bottom:5px;font-size:12px">GSTIN</div><input class="input-field" value="33AAJCS1234F1Z5"/></div>
+            <div><div class="setting-label" style="margin-bottom:5px;font-size:12px">Lead Auditor</div><input class="input-field" value="Arun Kumar"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Export & Reporting</div>
+          <div class="setting-row"><div><div class="setting-label">Auto-generate PDF</div><div class="setting-sub">Monthly audit report PDF</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div><div class="setting-label">CSV Export</div><div class="setting-sub">Allow data export</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div><div class="setting-label">Audit Trail Logging</div><div class="setting-sub">Log all user actions</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+function nav(el, page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + page).classList.add('active');
+  const titles = {dashboard:'IT Audit Dashboard',transactions:'Transactions',risk:'Risk Management',reports:'Audit Reports',settings:'Settings'};
+  document.querySelector('.header-title').innerHTML = titles[page].replace('IT Audit ','IT Audit <span>').replace(/(?<=<span>.+)$/,'</span>') || titles[page];
+  // lazy-init charts if not done
+  if (page === 'risk' && !window.riskDone) buildRiskCharts();
+}
+
+function applyFilters(){
+  const cat = document.getElementById('fCat').value;
+  const pay = document.getElementById('fPay').value;
+  console.log('Filters:', cat, pay);
+  // Visual feedback
+  const btn = document.querySelector('.filter-btn');
+  btn.textContent = 'Applied ✓';
+  setTimeout(() => btn.textContent = 'Apply Filters', 1500);
+}
+
+// ── CHART DEFAULTS ────────────────────────────────────────────────────────
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+// ── BAR CHART ─────────────────────────────────────────────────────────────
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Groceries','Electronics','Beverages','Bakery','Meat & Poultry','Dairy'],
+    datasets: [{
+      label: 'Sales (₹L)', borderRadius: 6,
+      data: [14.2, 8.7, 6.4, 5.1, 7.8, 6.4],
+      backgroundColor: ['rgba(249,115,22,.75)','rgba(59,130,246,.75)','rgba(34,197,94,.75)','rgba(245,158,11,.75)','rgba(239,68,68,.75)','rgba(168,85,247,.75)'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive:true, plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}},
+      y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>'₹'+v+'L',font:{size:10}}}
+    }
+  }
+});
+
+// ── DOUGHNUT ──────────────────────────────────────────────────────────────
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Cash','Card','UPI','Wallet'],
+    datasets: [{
+      data: [22, 35, 31, 12],
+      backgroundColor: ['#f97316','#3b82f6','#22c55e','#a855f7'],
+      borderWidth: 0, hoverOffset: 8,
+    }]
+  },
+  options: { responsive:true, cutout:'60%', plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}} }
+});
+
+// ── LINE CHART ────────────────────────────────────────────────────────────
+const days = Array.from({length:30},(_,i)=>`Mar ${i+1}`);
+const salesData = [38,42,39,55,61,58,44,52,67,71,65,58,74,82,78,69,85,92,88,76,83,91,95,88,79,84,90,96,93,89].map(v=>v*500);
+new Chart(document.getElementById('lineChart'), {
+  type:'line',
+  data:{
+    labels: days,
+    datasets:[{
+      label:'Sales (₹)',data:salesData,
+      borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',
+      fill:true,tension:.4,pointRadius:0,borderWidth:2,
+    }]
+  },
+  options:{
+    responsive:true,plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{display:false},ticks:{maxTicksLimit:8,font:{size:10}}},
+      y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>'₹'+(v/1000).toFixed(0)+'K',font:{size:10}}}
+    }
+  }
+});
+
+// ── ANOMALIES ─────────────────────────────────────────────────────────────
+const anomalies = [
+  {msg:'High-value transaction — Electronics, Bill #TXN9847',val:'₹1,24,500',color:'#ef4444'},
+  {msg:'Duplicate detected — UPI payment, same amount within 2 min',val:'₹4,200 ×2',color:'#f59e0b'},
+  {msg:'Unusual pattern — 34 transactions from single terminal in 1hr',val:'Counter #7',color:'#ef4444'},
+  {msg:'Off-hours sale — Meat & Poultry at 02:14 AM',val:'₹18,800',color:'#f59e0b'},
+  {msg:'Voided & re-billed transaction — Groceries',val:'₹6,720',color:'#a855f7'},
+  {msg:'Cashback mismatch — Wallet payment discrepancy',val:'₹340',color:'#3b82f6'},
+];
+const al = document.getElementById('anomalyList');
+anomalies.forEach(a=>{
+  al.innerHTML+=`<div class="anomaly-item">
+    <div class="anomaly-dot" style="background:${a.color}"></div>
+    <div class="anomaly-msg">${a.msg}</div>
+    <div class="anomaly-val" style="color:${a.color}">${a.val}</div>
+  </div>`;
+});
+
+// ── HEATMAP ───────────────────────────────────────────────────────────────
+const cats=['Groceries','Electronics','Beverages','Bakery','Meat & Poultry','Dairy'];
+const hmData=[
+  [1,2,3,4,5,3,2],[5,4,3,2,4,5,4],[2,1,2,3,2,4,3],
+  [1,1,2,1,2,3,2],[4,5,5,4,3,4,5],[2,2,3,2,3,3,2]
+];
+function hmColor(v){
+  if(v<=1) return '#1a2235';
+  if(v<=2) return 'rgba(34,197,94,.3)';
+  if(v<=3) return 'rgba(245,158,11,.45)';
+  return 'rgba(239,68,68,.55)';
+}
+const hg=document.getElementById('heatmapGrid');
+hmData.forEach((row,i)=>{
+  const rowDiv=document.createElement('div');
+  rowDiv.style.cssText='display:grid;grid-template-columns:80px repeat(7,44px);gap:4px;margin-bottom:4px;align-items:center';
+  rowDiv.innerHTML=`<span style="font-size:10px;color:var(--muted);font-weight:600">${cats[i]}</span>`;
+  row.forEach(v=>{
+    const cell=document.createElement('div');
+    cell.className='hm-cell';
+    cell.style.cssText=`background:${hmColor(v)};height:32px`;
+    cell.title=`Risk ${v}/5`;
+    rowDiv.appendChild(cell);
+  });
+  hg.appendChild(rowDiv);
+});
+
+// ── TRANSACTIONS TABLE ────────────────────────────────────────────────────
+const TX=[
+  {id:'TXN001',product:'Samsung TV 55"',cat:'Electronics',amount:'₹89,990',pay:'Card',date:'01 Mar',status:'Flagged',risk:87},
+  {id:'TXN002',product:'Toor Dal 5kg',cat:'Groceries',amount:'₹720',pay:'UPI',date:'01 Mar',status:'Approved',risk:8},
+  {id:'TXN003',product:'Red Bull 24-pack',cat:'Beverages',amount:'₹3,600',pay:'Cash',date:'02 Mar',status:'Approved',risk:14},
+  {id:'TXN004',product:'Chicken Breast 2kg',cat:'Meat & Poultry',amount:'₹18,800',pay:'Cash',date:'02 Mar',status:'Flagged',risk:72},
+  {id:'TXN005',product:'Whole Milk 6L',cat:'Dairy',amount:'₹480',pay:'Wallet',date:'03 Mar',status:'Approved',risk:5},
+  {id:'TXN006',product:'Laptop HP Pavilion',cat:'Electronics',amount:'₹1,24,500',pay:'Card',date:'03 Mar',status:'Flagged',risk:94},
+  {id:'TXN007',product:'Sourdough Bread',cat:'Bakery',amount:'₹290',pay:'UPI',date:'04 Mar',status:'Approved',risk:4},
+  {id:'TXN008',product:'Atta 10kg',cat:'Groceries',amount:'₹640',pay:'UPI',date:'04 Mar',status:'Approved',risk:7},
+  {id:'TXN009',product:'iPhone 15 Pro',cat:'Electronics',amount:'₹1,34,900',pay:'Card',date:'05 Mar',status:'Flagged',risk:91},
+  {id:'TXN010',product:'Orange Juice 12-pack',cat:'Beverages',amount:'₹1,440',pay:'UPI',date:'05 Mar',status:'Pending',risk:22},
+  {id:'TXN011',product:'Basmati Rice 25kg',cat:'Groceries',amount:'₹2,400',pay:'Cash',date:'06 Mar',status:'Approved',risk:11},
+  {id:'TXN012',product:'Cheese Block 500g',cat:'Dairy',amount:'₹620',pay:'Wallet',date:'06 Mar',status:'Approved',risk:9},
+  {id:'TXN013',product:'Air Fryer',cat:'Electronics',amount:'₹7,999',pay:'Card',date:'07 Mar',status:'Pending',risk:38},
+  {id:'TXN014',product:'Mutton 1kg',cat:'Meat & Poultry',amount:'₹980',pay:'Cash',date:'07 Mar',status:'Approved',risk:19},
+  {id:'TXN015',product:'Croissants 6-pack',cat:'Bakery',amount:'₹360',pay:'UPI',date:'08 Mar',status:'Approved',risk:3},
+];
+function riskColor(r){return r>=71?'var(--red)':r>=40?'var(--yellow)':'var(--green)'}
+function riskLabel(r){return r>=71?'High':r>=40?'Medium':'Low'}
+const tbody=document.getElementById('txTable');
+TX.forEach((t,i)=>{
+  const sc=`<span style="color:${riskColor(t.risk)};font-family:var(--mono);font-weight:700;font-size:13px">${t.risk}</span>`;
+  const pill=t.status==='Approved'?'pill-ok':t.status==='Flagged'?'pill-flag':'pill-pend';
+  const sym=t.status==='Approved'?'✓':t.status==='Flagged'?'⚠':'⏳';
+  tbody.innerHTML+=`<tr>
+    <td class="cell-id">${t.id}</td>
+    <td class="cell-name">${t.product}</td>
+    <td style="color:var(--muted);font-size:11px">${t.cat}</td>
+    <td class="cell-amount" style="color:var(--text)">${t.amount}</td>
+    <td style="color:#94a3b8">${t.pay}</td>
+    <td style="color:var(--muted);font-size:11px">${t.date}</td>
+    <td><span class="status-pill ${pill}"><span class="dot"></span>${t.status}</span></td>
+    <td>${sc} <span style="font-size:9px;color:var(--muted2)">${riskLabel(t.risk)}</span></td>
+  </tr>`;
+});
+
+// ── RISK CHARTS (lazy) ────────────────────────────────────────────────────
+function buildRiskCharts(){
+  window.riskDone=true;
+  new Chart(document.getElementById('riskBar'),{
+    type:'bar',
+    data:{
+      labels:['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],
+      datasets:[{label:'Transactions',borderRadius:5,borderWidth:0,
+        data:[4210,3180,2640,2770,98,52,33,26,12,9],
+        backgroundColor:['#22c55e','#22c55e','#22c55e','#22c55e','#f59e0b','#f59e0b','#f59e0b','#ef4444','#ef4444','#ef4444'],
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+  new Chart(document.getElementById('riskRadar'),{
+    type:'radar',
+    data:{
+      labels:['Groceries','Electronics','Beverages','Bakery','Meat & Poultry','Dairy'],
+      datasets:[{label:'Risk Score',data:[22,74,18,9,48,14],
+        backgroundColor:'rgba(249,115,22,.15)',borderColor:'#f97316',pointBackgroundColor:'#f97316',borderWidth:2}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{r:{min:0,max:100,ticks:{stepSize:25,color:'#475569',font:{size:9}},grid:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#94a3b8',font:{size:10}}}}}
+  });
+  const rb=document.getElementById('riskBars');
+  const catRisks=[{n:'Groceries',v:22,c:'var(--green)'},{n:'Electronics',v:74,c:'var(--red)'},{n:'Beverages',v:18,c:'var(--green)'},{n:'Bakery',v:9,c:'var(--green)'},{n:'Meat & Poultry',v:48,c:'var(--yellow)'},{n:'Dairy',v:14,c:'var(--green)'}];
+  catRisks.forEach(r=>{
+    rb.innerHTML+=`<div class="prog-row">
+      <div class="prog-label">${r.n}</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" style="width:${r.v}%;background:${r.c}"></div></div>
+      <div class="prog-pct" style="color:${r.c}">${r.v}</div>
+    </div>`;
+  });
+}
+
+// ── FINDINGS ─────────────────────────────────────────────────────────────
+const findings=[
+  {sev:'Critical',icon:'🚨',color:'var(--red)',title:'Uncontrolled High-Value Transactions in Electronics',msg:'34 transactions exceeding ₹50,000 processed without dual approval. TXN006 and TXN009 processed after business hours without manager override log.',meta:'Ref: IT-AUD-2026-C01 · Electronics · March 2026'},
+  {sev:'Critical',icon:'🚨',color:'var(--red)',title:'Duplicate Transaction Detection Failure',msg:'18 confirmed duplicate UPI and wallet transactions totalling ₹84,600 were not auto-flagged by the POS system. Root cause: deduplication window set to 30 seconds (recommended: 5 minutes).',meta:'Ref: IT-AUD-2026-C02 · Payment Gateway · March 2026'},
+  {sev:'Major',icon:'⚠️',color:'var(--yellow)',title:'Off-Hours Sales Without Authorisation',msg:'7 transactions processed between 01:00–04:00 AM with no supervisor sign-off record. Category: Meat & Poultry. High spoilage and fraud risk.',meta:'Ref: IT-AUD-2026-M01 · Meat & Poultry · March 2026'},
+  {sev:'Major',icon:'⚠️',color:'var(--yellow)',title:'Cashback & Loyalty Point Discrepancies',msg:'Cashback mismatch of ₹12,840 detected across Wallet and Card transactions. Loyalty tier upgrades applied incorrectly for 63 customers.',meta:'Ref: IT-AUD-2026-M02 · Promotions Module · March 2026'},
+  {sev:'Minor',icon:'ℹ️',color:'var(--blue)',title:'GST Rounding Error in POS Software',msg:'GST computed at 4 decimal precision in POS but rounded to 2 in back-end ledger, creating ₹1–₹3 variance per bill. Total exposure: ₹4,200.',meta:'Ref: IT-AUD-2026-N01 · Billing Engine · March 2026'},
+  {sev:'Minor',icon:'ℹ️',color:'var(--blue)',title:'Incomplete Audit Trail for Voided Bills',msg:'11 voided bills lack supervisor ID in audit log. System allows void without second-factor authentication when billed amount < ₹500.',meta:'Ref: IT-AUD-2026-N02 · POS System · March 2026'},
+];
+const fp=document.getElementById('findingsPanel');
+findings.forEach(f=>{
+  fp.innerHTML+=`<div class="finding-card" style="border-color:${f.color}">
+    <div class="finding-icon">${f.icon}</div>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <div class="finding-title" style="color:${f.color}">${f.title}</div>
+        <span class="card-badge" style="background:transparent;border:1px solid ${f.color};color:${f.color};font-size:9px">${f.sev}</span>
+      </div>
+      <div class="finding-msg">${f.msg}</div>
+      <div class="finding-meta">${f.meta}</div>
+    </div>
+  </div>`;
+});
+
+const recs=[
+  {title:'Implement Dual-Approval for High-Value Transactions',body:'Configure POS and ERP to require manager-level 2FA approval for all transactions exceeding ₹50,000. Apply immediately to Electronics and Meat & Poultry counters.'},
+  {title:'Extend Deduplication Window to 5 Minutes',body:'Update payment gateway middleware deduplication TTL from 30 seconds to 300 seconds to prevent UPI and Wallet double-billing.'},
+  {title:'Enable Off-Hours Access Control',body:'Restrict POS logins between 01:00–05:00 AM to supervisor accounts only. Log biometric or OTP confirmation for every session initiated outside business hours.'},
+  {title:'Cashback & Promotions Audit Module',body:'Deploy automated reconciliation between POS cashback issued and CRM loyalty records on a daily batch cycle. Introduce exception reports for variances > ₹100.'},
+  {title:'GST Precision Alignment',body:'Patch billing engine to apply consistent 2-decimal rounding with banker\'s rounding (round-half-to-even) across POS and ERP ledger. Re-compute affected March bills.'},
+  {title:'Mandatory Supervisor ID for Void Operations',body:'Remove amount threshold exemption from void-bill workflow. All void operations must capture supervisor badge scan and enter audit log with timestamp.'},
+];
+const rp=document.getElementById('recsPanel');
+recs.forEach((r,i)=>{
+  rp.innerHTML+=`<div class="rec-card">
+    <div class="rec-num">0${i+1}</div>
+    <div><div class="rec-title">${r.title}</div><div class="rec-body">${r.body}</div></div>
+  </div>`;
+});
+</script>
+</body>
+</html>
